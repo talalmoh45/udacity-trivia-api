@@ -123,11 +123,11 @@ class QuestionView extends Component {
           <ul>
             {Object.keys(this.state.categories).map((id, ) => (
               <li key={id} onClick={() => {this.getByCategory(id)}}>
-                {this.state.categories[id]}
-                <img className="category" src={`${this.state.categories[id].toLowerCase()}.svg`}/>
+                {this.state.categories[id]['type']}
+                <img className="category" src={`${this.state.categories[id]['type'].toString().toLowerCase()}.svg`}/>
               </li>
             ))}
-          </ul>
+          </ul  >
           <Search submitSearch={this.submitSearch}/>
         </div>
         <div className="questions-list">
