@@ -32,7 +32,7 @@ def create_app(test_config=None):
   '''
   @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
   '''
-  # CORS(app,resources={r"/*",{"origins" : "*"}})
+  # CORS(app,resources={r"/questions/*",{'origins': '*'}})
   '''
   @TODO: Use the after_request decorator to set Access-Control-Allow
   '''
@@ -52,6 +52,7 @@ def create_app(test_config=None):
   def get_Categories():
     selection = Category.query.order_by(Category.id).all()
     categories=paginate(request,selection)
+  
     return jsonify({
       'categories' : categories
     })
@@ -79,13 +80,18 @@ def create_app(test_config=None):
     all_categories = Category.query.order_by(Category.id).all()
     formatted_Categories= [category.format() for category in all_categories]
 
-    return jsonify({
-      'success':True,
-      'questions' : formatted_questions,
-      'total_questions' : len(questions),
-      'categories' : formatted_Categories,
-      'currentCategory' : formatted_Categories
-    })
+    if len(formatted_questions)==0:
+      abort(404)
+
+    else:
+      
+      return jsonify({
+        'success':True,
+        'questions' : formatted_questions,
+        'total_questions' : len(questions),
+        'categories' : formatted_Categories,
+        'currentCategory' : formatted_Categories
+      })
 
 
 
@@ -212,13 +218,17 @@ def create_app(test_config=None):
 
   @app.route('/categories/<int:category>/questions',methods=['GET'])
   def get_category_question(category):
+    cat=Category.query.filter(Category.id==category).one_or_none()
     question=Question.query.filter(category==Question.category).all()
     current_questions=paginate(request,question)
-    return jsonify({
-      'success':True,
-      'category' : category,
-      'questions' : current_questions
-    })
+    if cat is None:
+      abort(404)
+    else:
+      return jsonify({
+        'success':True,
+        'category' : category,
+        'questions' : current_questions
+      })
 
 
   '''
@@ -238,31 +248,39 @@ def create_app(test_config=None):
   def quizes():
    if request.data:
     search_data = json.loads(request.data)
-    if (('quiz_category' in search_data)
-            and 'previous_questions' in search_data):
-        questions_query = Question.query.filter_by(
-            category=search_data['quiz_category']['id']
-        ).filter(
-            Question.id.notin_(search_data["previous_questions"])
-        ).all()
-        length_of_available_question = len(questions_query)
-        if length_of_available_question > 0:
-            result = {
+
+    if search_data['quiz_category']['id']==0:
+        questions_query =Question.query.filter(
+          Question.id.notin_(search_data["previous_questions"])
+          ).all()
+        length_of_available_question = len(Question.query.all())
+
+        return jsonify({
                 "success": True,
                 "question": Question.format(questions_query[random.randrange(0,length_of_available_question)])
+            })
+
+    if (('quiz_category' in search_data)
+              and 'previous_questions' in search_data):
+          questions_query = Question.query.filter_by(
+              category=search_data['quiz_category']['id']
+          ).filter(
+              Question.id.notin_(search_data["previous_questions"])
+          ).all()
+          length_of_available_question = len(questions_query)
+          if length_of_available_question > 0:
+              result = {
+                  "success": True,
+                  "question": Question.format(questions_query[random.randrange(0,length_of_available_question)])
+              }
+        
+          else:
+            result = {
+                "success": True,
+                "question": None
             }
-
-        else:
-          result = {
-              "success": True,
-              "question": None
-          }
-          
-        return jsonify(result)
-
-
-
-
+            
+          return jsonify(result)
 
   '''
   @TODO: 
